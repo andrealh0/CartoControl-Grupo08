@@ -1,0 +1,2 @@
+codigo,cliente,producto,cantidad_solicitada,fecha_entrega,pedido_aprobado,etapa,estado,prioridad,material,cantidad_material,dia_planificado,turno,arte_aprobado,resultado_calidad,identificacion,autorizacion_parcial
+OT-TEST-01,Cliente prueba,Caja de carton,100,30/10/2026,si,Planificacion,Pendiente,Media,MAT-01,100,,,no,Pendiente,,
