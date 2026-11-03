@@ -1,4 +1,6 @@
 import modulo_completoProyecto
+import modulos_calidad_despacho
+import historial_trazabilidad
 
 #INICIO SUBMENU 1
 def submenu_gestion_planificacion():
@@ -182,15 +184,13 @@ while opcion != 7:
             submenu_seguimiento_produccion()
 
         elif opcion == 4:
-            submenu_aprobaciones_control_calidad()
+            modulos_calidad_despacho.menu_calidad()
 
         elif opcion == 5:
-            # Aquí se llamará al submenú correspondiente a la identificación y preparación para despacho
-            submenu_identificacion_despacho()
+            modulos_calidad_despacho.menu_despacho()
         
         elif opcion == 6:
-            # Aquí se llamará al submenú correspondiente al historial de trazabilidad
-            print("Submenú de Historial de trazabilidad")        
+            historial_trazabilidad.consultar_historial()        
 
         # si es 7, el ciclo termina
 

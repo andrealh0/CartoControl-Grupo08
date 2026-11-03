@@ -97,9 +97,7 @@ def registrar_inspeccion_calidad():
         resultado = "Necesita correccion"
 
     #registrar responsable y fecha de la inspeccion
-    responsable = datos.pedir_texto(
-        "Ingrese el responsable de la inspeccion: "
-    ).title()
+    responsable = datos.pedir_texto("Ingrese el responsable de la inspeccion: ").title()
 
     fecha = datos.fecha_hora_actual()
 
@@ -258,23 +256,43 @@ def validar_preparar_despacho():
         print("El producto aun no tiene una identificacion registrada.")
         return
 
-    #mostrar la cantidad solicitada de la orden
+    #obtener la cantidad total solicitada
     cantidad_orden = int(orden[3])
-    print("Cantidad solicitada de la orden:", cantidad_orden)
+
+    #calcular cuanto producto ya fue preparado para despacho
+    cantidad_despachada = 0
+
+    for registro in datos.registros_extra:
+        if registro[0] == "PREPARACION_DESPACHO" and registro[1] == codigo:
+            cantidad_despachada = cantidad_despachada + int(registro[2])
+
+    #calcular la cantidad que todavia queda pendiente
+    cantidad_pendiente = cantidad_orden - cantidad_despachada
+
+    print("Cantidad solicitada:", cantidad_orden)
+    print("Cantidad ya preparada para despacho:", cantidad_despachada)
+    print("Cantidad pendiente:", cantidad_pendiente)
+
+    #verificar si la orden ya fue completada
+    if cantidad_pendiente <= 0:
+        print("La orden ya fue preparada completamente para despacho.")
+        return
 
     #pedir la cantidad que se desea despachar
     cantidad_despacho = datos.pedir_positivo(
         "Ingrese la cantidad que se desea despachar: "
     )
 
-    #evitar despachar mas de lo solicitado
-    if cantidad_despacho > cantidad_orden:
-        print("No se puede despachar una cantidad mayor que la solicitada.")
-        return
+    # Validar que no se prepare mas de la cantidad pendiente
+    while cantidad_despacho > cantidad_pendiente:
+        print("La cantidad excede lo que queda pendiente por preparar.")
+        cantidad_despacho = datos.pedir_positivo(
+            "Ingrese nuevamente la cantidad que se desea preparar: "
+        )
 
-    # verificar si se trata de una entrega parcial
-    if cantidad_despacho < cantidad_orden:
-        print("La cantidad corresponde a una entrega parcial.")
+    #verificar si se trata de una entrega parcial
+    if cantidad_despacho < cantidad_pendiente:
+        print("La cantidad corresponde a una preparación parcial para despacho.")
 
         autorizada = datos.pedir_si_no(
             "¿La entrega parcial esta autorizada? (si/no): "
@@ -328,7 +346,7 @@ def validar_preparar_despacho():
 
     #actualizar la etapa y estado de la orden
     orden[6] = "Despacho"
-    if cantidad_despacho == cantidad_orden:
+    if cantidad_despacho == cantidad_pendiente:
         orden[7] = "Terminada"
     else:
         orden[7] = "En Proceso"
@@ -338,3 +356,47 @@ def validar_preparar_despacho():
     print("La orden cumple los requisitos y está lista para despacho.")
     print("Cantidad preparada:", cantidad_despacho)
     print("Fecha y hora:", fecha)
+
+
+#submenu del modulo de aprobaciones y control de calidad
+def menu_calidad():
+    opcion = ""
+
+    while opcion != "3":
+        print("\nAPROBACIONES Y CONTROL DE CALIDAD")
+        print("1. Registrar y verificar aprobacion del arte")
+        print("2. Registrar inspecciones y resultados de calidad")
+        print("3. Regresar al menu principal")
+
+        opcion = input("Seleccione una opcion: ").strip()
+
+        if opcion == "1":
+            registrar_verificar_arte()
+
+        elif opcion == "2":
+            registrar_inspeccion_calidad()
+
+        elif opcion != "3":
+            print("Opcion invalida. Intente nuevamente.")
+
+
+#submenu del modulo de identificacion y preparacion para despacho
+def menu_despacho():
+    opcion = ""
+
+    while opcion != "3":
+        print("\nIDENTIFICACION Y PREPARACION PARA DESPACHO")
+        print("1. Generar y registrar identificacion del producto")
+        print("2. Validar y preparar una orden para despacho")
+        print("3. Regresar al menu principal")
+
+        opcion = input("Seleccione una opcion: ").strip()
+
+        if opcion == "1":
+            generar_identificacion_producto()
+
+        elif opcion == "2":
+            validar_preparar_despacho()
+
+        elif opcion != "3":
+            print("Opcion invalida. Intente nuevamente.")
