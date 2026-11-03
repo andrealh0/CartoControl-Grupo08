@@ -234,3 +234,107 @@ def generar_identificacion_producto():
     print("========================================")
     print("Identificacion registrada correctamente.")
 
+#validar y preparar una orden para despacho
+def validar_preparar_despacho():
+    print("\n--- VALIDAR Y PREPARAR ORDEN PARA DESPACHO ---")
+
+    #buscar la orden
+    codigo = datos.pedir_texto("Codigo de orden: ").upper()
+    orden = datos.buscar_orden(codigo)
+
+    #verificar que la orden exista
+    if orden is None:
+        print("La orden no existe.")
+        return
+
+    #verificar la aprobacion de calidad
+    if orden[14] != "Aprobado":
+        print("La orden no cuenta con aprobacion de calidad.")
+        print("Resultado actual:", orden[14])
+        return
+
+    #verificar que exista una identificacion
+    if orden[15] == "":
+        print("El producto aun no tiene una identificacion registrada.")
+        return
+
+    #mostrar la cantidad solicitada de la orden
+    cantidad_orden = int(orden[3])
+    print("Cantidad solicitada de la orden:", cantidad_orden)
+
+    #pedir la cantidad que se desea despachar
+    cantidad_despacho = datos.pedir_positivo(
+        "Ingrese la cantidad que se desea despachar: "
+    )
+
+    #evitar despachar mas de lo solicitado
+    if cantidad_despacho > cantidad_orden:
+        print("No se puede despachar una cantidad mayor que la solicitada.")
+        return
+
+    # verificar si se trata de una entrega parcial
+    if cantidad_despacho < cantidad_orden:
+        print("La cantidad corresponde a una entrega parcial.")
+
+        autorizada = datos.pedir_si_no(
+            "¿La entrega parcial esta autorizada? (si/no): "
+        )
+
+        if autorizada == "no":
+            print("La orden no puede prepararse para despacho sin autorizacion.")
+            return
+
+        autorizador = datos.pedir_texto(
+            "Ingrese el nombre de quien autorizo la entrega parcial: "
+        ).title()
+
+
+        orden[16] = "si"
+
+
+        datos.agregar_registro_extra(
+            "AUTORIZACION_PARCIAL",
+            codigo,
+            [
+                cantidad_despacho,
+                autorizador,
+                datos.fecha_hora_actual()
+            ]
+        )
+
+    #registrar la preparacion para despacho
+    responsable = datos.pedir_texto(
+        "Ingrese el responsable de preparar el despacho: "
+    ).title()
+
+    fecha = datos.fecha_hora_actual()
+
+    datos.agregar_registro_extra(
+        "PREPARACION_DESPACHO",
+        codigo,
+        [
+            cantidad_despacho,
+            responsable,
+            fecha
+        ]
+    )
+
+    #registrar el evento en el historial
+    descripcion = "Orden preparada para despacho. Cantidad: "
+    descripcion = descripcion + str(cantidad_despacho)
+    descripcion = descripcion + ". Responsable: " + responsable
+
+    datos.registrar_historial(codigo, descripcion)
+
+    #actualizar la etapa y estado de la orden
+    orden[6] = "Despacho"
+    if cantidad_despacho == cantidad_orden:
+        orden[7] = "Terminada"
+    else:
+        orden[7] = "En Proceso"
+
+    datos.guardar_datos()
+
+    print("La orden cumple los requisitos y está lista para despacho.")
+    print("Cantidad preparada:", cantidad_despacho)
+    print("Fecha y hora:", fecha)
