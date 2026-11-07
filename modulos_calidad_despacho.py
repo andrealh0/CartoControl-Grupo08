@@ -15,7 +15,9 @@ def registrar_verificar_arte():
     #registrar los datos de la aprobación del arte
     version = datos.pedir_texto("Ingrese la version del arte o cliche: ")
     aprobado = datos.pedir_si_no("¿El arte esta aprobado? (si/no): ")
-    responsable = datos.pedir_texto("Ingrese el responsable de la revision: ").title()
+    responsable = datos.pedir_texto(
+        "Ingrese el responsable de la revision: "
+    ).title()
     fecha = datos.fecha_hora_actual()
 
     #actualizar el estado de aprobación del arte
@@ -28,7 +30,7 @@ def registrar_verificar_arte():
         [version, aprobado, responsable, fecha]
     )
 
-    #istrar la aprobación del arte en el historial
+    #registrar la aprobación del arte en el historial
     descripcion = "Arte version " + version + ". Aprobado: " + aprobado
     descripcion = descripcion + ". Responsable: " + responsable
 
@@ -36,9 +38,70 @@ def registrar_verificar_arte():
 
     #mostrar el resultado de la revisión
     if aprobado == "si":
-        print("Arte aprobado. La orden puede continuar.")
+        print("Arte aprobado correctamente.")
     else:
         print("Arte no aprobado. La orden queda pendiente.")
+
+
+#calcular la cantidad buena registrada en produccion
+def total_produccion_buena(codigo):
+    total = 0
+
+    for produccion in datos.producciones:
+        if produccion[0] == codigo:
+            total = total + int(produccion[3])
+
+    return total
+
+
+#calcular las unidades que ya tienen una decision final de calidad
+def total_calidad_finalizada(codigo):
+    total = 0
+
+    for registro in datos.registros_extra:
+        if registro[0] == "INSPECCION_CALIDAD" and registro[1] == codigo:
+            resultado = registro[5]
+
+            if resultado == "Aprobado" or resultado == "Rechazado":
+                total = total + int(registro[2])
+
+    return total
+
+
+#calcular las unidades aprobadas por calidad
+def total_calidad_aprobada(codigo):
+    total = 0
+
+    for registro in datos.registros_extra:
+        if registro[0] == "INSPECCION_CALIDAD" and registro[1] == codigo:
+            if registro[5] == "Aprobado":
+                total = total + int(registro[2])
+
+    return total
+
+
+#calcular las unidades que ya fueron identificadas
+def total_identificado(codigo, clasificacion=""):
+    total = 0
+
+    for registro in datos.registros_extra:
+        if registro[0] == "IDENTIFICACION_PRODUCTO" and registro[1] == codigo:
+            if clasificacion == "" or registro[4] == clasificacion:
+                total = total + int(registro[3])
+
+    return total
+
+
+#calcular las unidades que ya fueron preparadas para despacho
+def total_preparado_despacho(codigo):
+    total = 0
+
+    for registro in datos.registros_extra:
+        if registro[0] == "PREPARACION_DESPACHO" and registro[1] == codigo:
+            total = total + int(registro[2])
+
+    return total
+
 
 #registrar inspecciones y resultados de calidad
 def registrar_inspeccion_calidad():
@@ -53,9 +116,33 @@ def registrar_inspeccion_calidad():
         print("La orden no existe.")
         return
 
+    #verificar que el pedido este aprobado
+    if orden[5] != "si":
+        print("El pedido de la orden aun no esta aprobado.")
+        return
+
     #verificar que el arte de la orden este aprobado
     if orden[13] != "si":
         print("El arte de la orden aun no esta aprobado.")
+        return
+
+    #verificar que exista produccion registrada
+    produccion_buena = total_produccion_buena(codigo)
+
+    if produccion_buena <= 0:
+        print("La orden aun no tiene unidades buenas registradas en produccion.")
+        return
+
+    #calcular las unidades disponibles para inspeccion
+    calidad_finalizada = total_calidad_finalizada(codigo)
+    disponible_inspeccion = produccion_buena - calidad_finalizada
+
+    print("Cantidad buena registrada en produccion:", produccion_buena)
+    print("Cantidad con resultado final de calidad:", calidad_finalizada)
+    print("Cantidad disponible para inspeccionar:", disponible_inspeccion)
+
+    if disponible_inspeccion <= 0:
+        print("No hay unidades pendientes de inspeccion.")
         return
 
     #registrar los datos de la inspeccion
@@ -63,8 +150,14 @@ def registrar_inspeccion_calidad():
         "Ingrese la cantidad inspeccionada: "
     )
 
+    while cant_inspeccionada > disponible_inspeccion:
+        print("La cantidad inspeccionada no puede superar las unidades disponibles.")
+        cant_inspeccionada = datos.pedir_positivo(
+            "Ingrese nuevamente la cantidad inspeccionada: "
+        )
+
     defectos = datos.pedir_texto(
-        "Ingrese los defectos encontrados o 'Ninguno': "
+        "Ingrese el defecto encontrado o 'Ninguno': "
     )
 
     cant_afectada = datos.pedir_cantidad(
@@ -78,6 +171,25 @@ def registrar_inspeccion_calidad():
             "Ingrese nuevamente la cantidad afectada: "
         )
 
+    #validar la relacion entre defecto y cantidad afectada
+    while defectos.strip().lower() == "ninguno" and cant_afectada > 0:
+        print("Si hay unidades afectadas, debe indicar el defecto encontrado.")
+        defectos = datos.pedir_texto(
+            "Ingrese el defecto encontrado: "
+        )
+
+    while defectos.strip().lower() != "ninguno" and cant_afectada == 0:
+        print("Si se encontro un defecto, debe indicar cuantas unidades fueron afectadas.")
+        cant_afectada = datos.pedir_cantidad(
+            "Ingrese nuevamente la cantidad afectada: "
+        )
+
+        while cant_afectada > cant_inspeccionada:
+            print("La cantidad afectada no puede ser mayor que la inspeccionada.")
+            cant_afectada = datos.pedir_cantidad(
+                "Ingrese nuevamente la cantidad afectada: "
+            )
+
     #registrar la decision de calidad
     print("1. Aprobado")
     print("2. Rechazado")
@@ -87,7 +199,9 @@ def registrar_inspeccion_calidad():
 
     while decision != "1" and decision != "2" and decision != "3":
         print("Opcion invalida. Seleccione 1, 2 o 3.")
-        decision = input("Seleccione el resultado de calidad: ").strip()
+        decision = input(
+            "Seleccione el resultado de calidad: "
+        ).strip()
 
     if decision == "1":
         resultado = "Aprobado"
@@ -96,8 +210,16 @@ def registrar_inspeccion_calidad():
     else:
         resultado = "Necesita correccion"
 
+    #validar que un producto aprobado no tenga unidades afectadas
+    if resultado == "Aprobado" and cant_afectada > 0:
+        print("No puede aprobarse una inspeccion que tiene unidades afectadas.")
+        print("Registre el resultado como Rechazado o Necesita correccion.")
+        return
+
     #registrar responsable y fecha de la inspeccion
-    responsable = datos.pedir_texto("Ingrese el responsable de la inspeccion: ").title()
+    responsable = datos.pedir_texto(
+        "Ingrese el responsable de la inspeccion: "
+    ).title()
 
     fecha = datos.fecha_hora_actual()
 
@@ -122,7 +244,7 @@ def registrar_inspeccion_calidad():
     descripcion = "Inspeccion de calidad. Resultado: " + resultado
     descripcion = descripcion + ". Inspeccionadas: " + str(cant_inspeccionada)
     descripcion = descripcion + ". Afectadas: " + str(cant_afectada)
-    descripcion = descripcion + ". Defectos: " + defectos
+    descripcion = descripcion + ". Defecto: " + defectos
     descripcion = descripcion + ". Responsable: " + responsable
 
     datos.registrar_historial(codigo, descripcion)
@@ -130,7 +252,12 @@ def registrar_inspeccion_calidad():
     #mostrar el resultado
     print("Inspeccion de calidad registrada correctamente.")
     print("Resultado:", resultado)
+
+    if resultado == "Necesita correccion":
+        print("Las unidades pueden corregirse y volver a inspeccionarse.")
+
     print("Fecha y hora:", fecha)
+
 
 #generar y registrar la identificacion del producto
 def generar_identificacion_producto():
@@ -145,21 +272,43 @@ def generar_identificacion_producto():
         print("La orden no existe.")
         return
 
-    #verificar que el producto haya sido aprobado por calidad
-    if orden[14] != "Aprobado":
-        print("El producto aun no cuenta con aprobacion de calidad.")
+    #verificar que existan unidades aprobadas por calidad
+    cantidad_aprobada = total_calidad_aprobada(codigo)
+    cantidad_identificada = total_identificado(codigo)
+    cantidad_disponible = cantidad_aprobada - cantidad_identificada
+
+    if cantidad_aprobada <= 0:
+        print("El producto aun no cuenta con unidades aprobadas por calidad.")
         print("Resultado actual:", orden[14])
         return
 
+    if cantidad_disponible <= 0:
+        print("Todas las unidades aprobadas ya fueron identificadas.")
+        return
+
+    print("Cantidad aprobada por calidad:", cantidad_aprobada)
+    print("Cantidad ya identificada:", cantidad_identificada)
+    print("Cantidad disponible para identificar:", cantidad_disponible)
+
     #registrar los datos de identificacion
     num_lote = 1
+
     for registro in datos.registros_extra:
         if registro[0] == "IDENTIFICACION_PRODUCTO" and registro[1] == codigo:
             num_lote = num_lote + 1
 
     lote = codigo + "-L" + str(num_lote).zfill(2)
 
-    cantidad = datos.pedir_positivo("Ingrese la cantidad a identificar: ")
+    cantidad = datos.pedir_positivo(
+        "Ingrese la cantidad a identificar: "
+    )
+
+    while cantidad > cantidad_disponible:
+        print("La cantidad excede las unidades aprobadas disponibles.")
+        cantidad = datos.pedir_positivo(
+            "Ingrese nuevamente la cantidad a identificar: "
+        )
+
     print("1. Producto terminado")
     print("2. Muestra")
     print("3. Prueba")
@@ -168,9 +317,11 @@ def generar_identificacion_producto():
         "Seleccione la clasificacion del producto: "
     ).strip()
 
-    while (op_clasificacion != "1"
+    while (
+        op_clasificacion != "1"
         and op_clasificacion != "2"
-        and op_clasificacion != "3"):
+        and op_clasificacion != "3"
+    ):
         print("Opcion invalida. Seleccione 1, 2 o 3.")
         op_clasificacion = input(
             "Seleccione la clasificacion del producto: "
@@ -183,8 +334,8 @@ def generar_identificacion_producto():
     else:
         clasificacion = "Prueba"
 
-    #bbtener el estado de calidad ya registrado
-    estado_calidad = orden[14]
+    #obtener el estado de calidad ya registrado
+    estado_calidad = "Aprobado"
     fecha = datos.fecha_hora_actual()
 
     #generar la etiqueta de identificacion
@@ -232,6 +383,7 @@ def generar_identificacion_producto():
     print("========================================")
     print("Identificacion registrada correctamente.")
 
+
 #validar y preparar una orden para despacho
 def validar_preparar_despacho():
     print("\n--- VALIDAR Y PREPARAR ORDEN PARA DESPACHO ---")
@@ -245,37 +397,30 @@ def validar_preparar_despacho():
         print("La orden no existe.")
         return
 
-    #verificar la aprobacion de calidad
-    if orden[14] != "Aprobado":
-        print("La orden no cuenta con aprobacion de calidad.")
-        print("Resultado actual:", orden[14])
-        return
+    #verificar que exista producto terminado identificado
+    cantidad_identificada = total_identificado(
+        codigo,
+        "Producto terminado"
+    )
 
-    #verificar que exista una identificacion
-    if orden[15] == "":
-        print("El producto aun no tiene una identificacion registrada.")
+    if cantidad_identificada <= 0:
+        print("No hay producto terminado identificado para preparar para despacho.")
         return
-
-    #obtener la cantidad total solicitada
-    cantidad_orden = int(orden[3])
 
     #calcular cuanto producto ya fue preparado para despacho
-    cantidad_despachada = 0
+    cantidad_despachada = total_preparado_despacho(codigo)
 
-    for registro in datos.registros_extra:
-        if registro[0] == "PREPARACION_DESPACHO" and registro[1] == codigo:
-            cantidad_despachada = cantidad_despachada + int(registro[2])
+    #calcular la cantidad que todavia queda disponible
+    cantidad_pendiente = cantidad_identificada - cantidad_despachada
 
-    #calcular la cantidad que todavia queda pendiente
-    cantidad_pendiente = cantidad_orden - cantidad_despachada
-
-    print("Cantidad solicitada:", cantidad_orden)
+    print("Cantidad solicitada:", orden[3])
+    print("Producto terminado identificado:", cantidad_identificada)
     print("Cantidad ya preparada para despacho:", cantidad_despachada)
-    print("Cantidad pendiente:", cantidad_pendiente)
+    print("Cantidad disponible para preparar:", cantidad_pendiente)
 
-    #verificar si la orden ya fue completada
+    #verificar si ya se preparo todo lo identificado
     if cantidad_pendiente <= 0:
-        print("La orden ya fue preparada completamente para despacho.")
+        print("Todo el producto terminado identificado ya fue preparado para despacho.")
         return
 
     #pedir la cantidad que se desea despachar
@@ -283,16 +428,19 @@ def validar_preparar_despacho():
         "Ingrese la cantidad que se desea despachar: "
     )
 
-    # Validar que no se prepare mas de la cantidad pendiente
+    #validar que no se prepare mas de la cantidad pendiente
     while cantidad_despacho > cantidad_pendiente:
-        print("La cantidad excede lo que queda pendiente por preparar.")
+        print("La cantidad excede el producto identificado disponible.")
         cantidad_despacho = datos.pedir_positivo(
             "Ingrese nuevamente la cantidad que se desea preparar: "
         )
 
     #verificar si se trata de una entrega parcial
-    if cantidad_despacho < cantidad_pendiente:
-        print("La cantidad corresponde a una preparación parcial para despacho.")
+    cantidad_solicitada = int(orden[3])
+    total_preparado_despues = cantidad_despachada + cantidad_despacho
+
+    if total_preparado_despues < cantidad_solicitada:
+        print("La cantidad corresponde a una preparacion parcial para despacho.")
 
         autorizada = datos.pedir_si_no(
             "¿La entrega parcial esta autorizada? (si/no): "
@@ -306,9 +454,7 @@ def validar_preparar_despacho():
             "Ingrese el nombre de quien autorizo la entrega parcial: "
         ).title()
 
-
         orden[16] = "si"
-
 
         datos.agregar_registro_extra(
             "AUTORIZACION_PARCIAL",
@@ -346,14 +492,16 @@ def validar_preparar_despacho():
 
     #actualizar la etapa y estado de la orden
     orden[6] = "Despacho"
-    if cantidad_despacho == cantidad_pendiente:
+    total_preparado = cantidad_despachada + cantidad_despacho
+
+    if total_preparado >= cantidad_solicitada:
         orden[7] = "Terminada"
     else:
         orden[7] = "En Proceso"
 
     datos.guardar_datos()
 
-    print("La orden cumple los requisitos y está lista para despacho.")
+    print("La orden cumple los requisitos y esta lista para despacho.")
     print("Cantidad preparada:", cantidad_despacho)
     print("Fecha y hora:", fecha)
 

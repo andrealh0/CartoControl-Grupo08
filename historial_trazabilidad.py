@@ -17,14 +17,18 @@ def consultar_historial():
     #buscar los registros asociados con la orden
     encontrados = 0
 
-    print("\nHistorial de la orden:", codigo)
-    print("----------------------------------------")
+    print("\nHISTORIAL DE LA ORDEN:", codigo)
+    print("-" * 100)
+    print(f"{'FECHA Y HORA':<20} | EVENTO")
+    print("-" * 100)
 
     for registro in datos.historial:
         if registro[0] == codigo:
-            print(registro[1], "-", registro[2])
+            print(f"{registro[1]:<20} | {registro[2]}")
             encontrados = encontrados + 1
 
     #informar si la orden aun no tiene movimientos registrados
     if encontrados == 0:
         print("La orden no tiene registros en el historial.")
+
+    print("-" * 100)
