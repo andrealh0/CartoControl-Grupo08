@@ -1,2 +1,6 @@
 codigo,cliente,producto,cantidad_solicitada,fecha_entrega,pedido_aprobado,etapa,estado,prioridad,material,cantidad_material,dia_planificado,turno,arte_aprobado,resultado_calidad,identificacion,autorizacion_parcial
-OT-TEST-01,Cliente prueba,Caja de carton,100,30/10/2026,si,Planificacion,Pendiente,Media,MAT-01,100,,,no,Pendiente,,
+OT-TEST-01,Cliente prueba,Caja de carton,100,30/10/2026,si,Despacho,Terminada,Media,MAT-01,100,,,si,Aprobado,Orden: OT-TEST-01 | Lote: OT-TEST-01-L03 | Cantidad: 100 | Clasificacion: Producto terminado | Calidad: Aprobado,si
+OT-TEST-FINAL,José,Empaque de cartón,340,20/01/2027,no,Planificacion,En Proceso,Baja,123,40,,,si,Rechazado,,
+PRUEBABUENA,Paolo,Empaque cartón,150,04/04/2027,si,Despacho,En Proceso,Media,MT670,20,,,si,Aprobado,Orden: PRUEBABUENA | Lote: PRUEBABUENA-L01 | Cantidad: 150 | Clasificacion: Muestra | Calidad: Aprobado,si
+OT-DEMO-01,Alimentos GT,Empaque de cartón,100,20/12/2026,si,Produccion,En Proceso,Media,MAT-DEMO,100,,,si,Aprobado,,
+OT-TEST-02,Pedro,Empaque,89,25/12/2026,si,Planificacion,Pendiente,Media,OMK-01,90,,,no,Pendiente,,

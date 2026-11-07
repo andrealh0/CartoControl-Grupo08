@@ -3,6 +3,7 @@ import modulos_calidad_despacho
 import historial_trazabilidad
 import modulos_ordenes_materiales
 
+
 #INICIO SUBMENU 3
 def submenu_seguimiento_produccion():
     opProd = 0
@@ -23,12 +24,14 @@ def submenu_seguimiento_produccion():
                 modulo_completoProyecto.actualizar_etapa_estado()
 
             elif opProd == 2:
-                modulo_completoProyecto.registrar_produccion_rechazos_paros()  
-        else: 
-            print("opción invalida. Intente de nuevamente")              
+                modulo_completoProyecto.registrar_produccion_rechazos_paros()
 
-            # si es 3, el ciclo termina    
-#FIN SUBMENU 3      
+        else:
+            print("Opción invalida. Intente nuevamente.")
+
+            # si es 3, el ciclo termina
+#FIN SUBMENU 3
+
 
 #cargar datos iniciales de ordenes y materiales
 
@@ -64,11 +67,11 @@ while opcion != 7:
 
         elif opcion == 5:
             modulos_calidad_despacho.menu_despacho()
-        
+
         elif opcion == 6:
-            historial_trazabilidad.consultar_historial()        
+            historial_trazabilidad.consultar_historial()
 
         # si es 7, el ciclo termina
 
     else:
-        print("Opción invalida. Intente nuevamente.")        
+        print("Opción invalida. Intente nuevamente.")
